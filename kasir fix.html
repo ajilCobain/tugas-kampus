@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WARUNG TELU</title>
+    <style>
+        #receipt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            max-width: 90%;
+            z-index: 9999;
+            display: none;
+        }
+
+        #receipt .box {
+            background: rgb(255, 255, 255);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        /* Background gelap */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 9998;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            height: fit-content;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        }
+
+        /* Style Komponen QR Code Dinamis */
+        .qris-container {
+            background: #ffffff;
+            border: 2px dashed #764ba2;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .qris-image {
+            width: 200px;
+            height: 200px;
+            object-fit: contain;
+            margin: 10px auto;
+            display: block;
+            border: 1px solid #eee;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .item-info h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .item-price {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .summary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .total {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .tax-service-breakdown {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-align: left;
+            border-top: 1px dashed rgba(255,255,255,0.4);
+            padding-top: 10px;
+        }
+        .tax-service-breakdown div {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .payment-section {
+            grid-column: span 2;
+            margin-top: 20px;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .report-card {
+            background: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .report-card p {
+            font-size: 12px;
+            color: #666;
+        }
+        .report-card h4 {
+            font-size: 14px;
+            color: #333;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 15px;
+            }
+            
+            .payment-section {
+                grid-column: span 1;
+            }
+            .report-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section">
+            <h2>Input Barang</h2>
+            <div class="input-group">
+                <label>Nama Barang:</label>
+                <input type="text" id="itemName" placeholder="Masukkan nama barang">
+            </div>
+            <div class="input-group">
+                <label>Harga (Rp):</label>
+                <input type="number" id="itemPrice" placeholder="0" min="0">
+            </div>
+            <div class="input-group">
+                <label>Jumlah:</label>
+                <input type="number" id="itemQty" placeholder="1" min="1" value="1">
+            </div>
+            <button class="btn" onclick="addItem()">➕ Tambah Barang</button>
+        </div>
+
+        <div class="section">
+            <h2>🛒 Daftar Belanja</h2>
+            <div id="cartItems"></div>
+        </div>
+
+        <div class="summary">
+            <h3>💰 Total Tagihan</h3>
+            <div class="total" id="totalAmount">Rp 0</div>
+            <div id="itemCount">0 item</div>
+            
+            <div class="tax-service-breakdown">
+                <div><span>Subtotal:</span><span id="lblSubtotal">Rp 0</span></div>
+                <div><span>Diskon Member (10%):</span><span id="lblDiscount">Rp 0</span></div>
+                <div><span>Service Charge (5%):</span><span id="lblService">Rp 0</span></div>
+                <div><span>PB1 / Pajak Resto (10%):</span><span id="lblTax">Rp 0</span></div>
+            </div>
+        </div>
+
+        <div class="section payment-section">
+            <h2>Pembayaran</h2>
+            <div class="input-group">
+                <label>Nama Kasir:</label>
+                <select id="cashierName">
+                    <option value="Albian">Albian</option>
+                    <option value="Chandra">Chandra</option>
+                    <option value="Azriel">Azriel</option>
+                    <option value="Nazril">Nazril</option>
+                    <option value="Nabila">Nabila</option>
+                    <option value="Rasya">Rasya</option>
+                    <option value="Rizky">Rizky</option>
+                    <option value="Nadya">Nadya</option>
+                    <option value="Nazla">Nazla</option>
+                    <option value="Najwa">Najwa</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Nama Pelanggan:</label>
+                <input type="text" id="customerName" placeholder="Masukkan nama pelanggan (opsional)">
+            </div>
+
+            <div class="input-group">
+                <label>Status Pelanggan:</label>
+                <select id="customerStatus">
+                    <option value="Bukan Member">Bukan Member</option>
+                    <option value="Member">Member (Diskon 10%)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Metode Pembayaran:</label>
+                <select id="paymentMethod">
+                    <option value="Tunai">Tunai (Cash)</option>
+                    <option value="Nontunai">Nontunai (QRIS / Transfer)</option>
+                </select>
+            </div>
+
+            <div id="qrisArea" class="qris-container">
+                <label style="color: #764ba2;">Silakan Scan QRIS Warung TELU:</label>
+                <img src="https://lh3.googleusercontent.com/d/1ervdb9d6_-QynQuqUTm0fTRcntVH0_YG" class="qris-image" alt="QRIS Warung TELU">
+            </div>
+
+            <div class="input-group">
+                <label>Uang Pembayaran (Rp):</label>
+                <input type="number" id="paymentAmount" placeholder="0" min="0">
+            </div>
+            <div class="input-group">
+                <label>Kembalian:</label>
+                <input type="text" id="changeAmount" readonly>
+            </div>
+            <button class="btn" onclick="processPayment()">Proses Pembayaran</button>
+            <button class="btn btn-danger" onclick="clearAll()">Reset Keranjang</button>
+            
+            <hr style="margin: 20px 0; border: 0; border-top: 1px dashed #ddd;">
+            <h3 style="font-size: 18px; color: #333; text-align: center;">📊 Laporan Omzet Shift Ini</h3>
+            <div class="report-grid">
+                <div class="report-card">
+                    <p>Total Omzet</p>
+                    <h4 id="repTotal">Rp 0</h4>
+                </div>
+                <div class="report-card">
+                    <p>Total Tunai</p>
+                    <h4 id="repTunai" style="color: #2e7d32;">Rp 0</h4>
+                </div>
+                <div class="report-card">
+                    <p>Total Nontunai</p>
+                    <h4 id="repNonTunai" style="color: #1565c0;">Rp 0</h4>
+                </div>
+            </div>
+        </div>
+        
+        <div id="overlay"></div>
+
+        <div id="receipt">
+            <div class="box">
+                <h3 style="text-align:center;">Struk Pembelian WARUNG TELU</h3>
+                <div id="receiptContent"></div>
+                <button class="btn" onclick="printReceipt()">🖨️ Print</button>
+                <button class="btn btn-danger" onclick="closeReceipt()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+        
+        // Konstanta Regulasi & Kebijakan Toko
+        const MEMBER_DISCOUNT_RATE = 0.10; // 10% Diskon Member
+        const SERVICE_RATE = 0.05;         // 5% Service Charge
+        const TAX_RATE = 0.10;             // 10% PB1 / Pajak Restoran
+
+        let laporanKasir = {
+            omzetTotal: 0,
+            omzetTunai: 0,
+            omzetNontunai: 0
+        };
+
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(angka);
+        }
+
+        function addItem() {
+            const name = document.getElementById('itemName').value.trim();
+            const price = parseInt(document.getElementById('itemPrice').value) || 0;
+            const qty = parseInt(document.getElementById('itemQty').value) || 1;
+
+            if (!name || price <= 0) {
+                alert('⚠️ Silakan masukkan nama barang dan harga yang valid!');
+                return;
+            }
+
+            const subtotal = price * qty;
+            const item = {
+                id: Date.now(),
+                name,
+                price,
+                qty,
+                subtotal
+            };
+
+            cart.push(item);
+            updateCartDisplay();
+            clearInput();
+        }
+
+        function deleteItem(id) {
+            cart = cart.filter(item => item.id !== id);
+            updateCartDisplay();
+        }
+
+        // Fungsi pusat untuk menghitung kalkulasi finansial berdasarkan regulasi dan status member
+        function calculateBill() {
+            const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
+            
+            // Logika Evaluasi Diskon Member
+            const isMember = document.getElementById('customerStatus').value === 'Member';
+            const discount = isMember ? Math.round(subtotal * MEMBER_DISCOUNT_RATE) : 0;
+            const baseAfterDiscount = subtotal - discount;
+
+            // Biaya tambahan dihitung dari DPP setelah diskon
+            const serviceCharge = Math.round(baseAfterDiscount * SERVICE_RATE);
+            const tax = Math.round((baseAfterDiscount + serviceCharge) * TAX_RATE); // Skema kaskade legal Indonesia
+            const grandTotal = baseAfterDiscount + serviceCharge + tax;
+
+            return { subtotal, discount, serviceCharge, tax, grandTotal, isMember };
+        }
+
+        function updateCartDisplay() {
+            const cartContainer = document.getElementById('cartItems');
+            const totalAmount = document.getElementById('totalAmount');
+            const itemCount = document.getElementById('itemCount');
+
+            if (cart.length === 0) {
+                cartContainer.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">Belum ada barang di keranjang</p>';
+                totalAmount.textContent = 'Rp 0';
+                itemCount.textContent = '0 item';
+                document.getElementById('lblSubtotal').textContent = 'Rp 0';
+                document.getElementById('lblDiscount').textContent = 'Rp 0';
+                document.getElementById('lblService').textContent = 'Rp 0';
+                document.getElementById('lblTax').textContent = 'Rp 0';
+                document.getElementById('changeAmount').value = '';
+                return;
+            }
+
+            cartContainer.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div class="item-info">
+                        <h4>${item.name}</h4>
+                        <small>${item.qty} x ${formatRupiah(item.price)}</small>
+                    </div>
+                    <div>
+                        <div class="item-price">${formatRupiah(item.subtotal)}</div>
+                        <button class="delete-btn" onclick="deleteItem(${item.id})">Hapus</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Panggil kalkulasi finansial terpusat
+            const bill = calculateBill();
+
+            totalAmount.textContent = formatRupiah(bill.grandTotal);
+            itemCount.textContent = `${cart.length} item`;
+            
+            // Perbarui label ringkasan di UI box ungu
+            document.getElementById('lblSubtotal').textContent = formatRupiah(bill.subtotal);
+            document.getElementById('lblDiscount').textContent = formatRupiah(bill.discount);
+            document.getElementById('lblService').textContent = formatRupiah(bill.serviceCharge);
+            document.getElementById('lblTax').textContent = formatRupiah(bill.tax);
+
+            // Jika mode nontunai aktif, perbarui nilai input pembayaran otomatis mengikuti grand total baru
+            if (document.getElementById('paymentMethod').value === 'Nontunai') {
+                document.getElementById('paymentAmount').value = bill.grandTotal;
+            }
+
+            updateLiveChange();
+        }
+
+        function clearInput() {
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemQty').value = '1';
+            document.getElementById('itemName').focus();
+        }
+
+        function processPayment() {
+            if (cart.length === 0) {
+                alert('⚠️ Keranjang kosong!');
+                return;
+            }
+
+            const bill = calculateBill();
+            const method = document.getElementById('paymentMethod').value;
+            const cashier = document.getElementById('cashierName').value;
+            
+            // Ambil value nama pelanggan, jika kosong beri nilai default "-"
+            let customerInput = document.getElementById('customerName').value.trim();
+            const customerName = customerInput ? customerInput : "-";
+
+            let payment = parseInt(document.getElementById('paymentAmount').value) || 0;
+
+            if (method === 'Nontunai' && payment === 0) {
+                payment = bill.grandTotal;
+                document.getElementById('paymentAmount').value = bill.grandTotal;
+            }
+
+            if (payment < bill.grandTotal) {
+                alert('❌ Uang pembayaran kurang!');
+                return;
+            }
+
+            const change = payment - bill.grandTotal;
+
+            // Generate invoice/struk terstruktur dengan tambahan alamat, nama kasir, nama pelanggan, status member & diskon
+            let receiptHTML = `
+                <p style="text-align: center; font-size: 13px; color: #555; margin-top: -5px; margin-bottom: 10px;">JL. Turangga no 25</p>
+                <p>Tanggal: ${new Date().toLocaleString('id-ID')}</p>
+                <p>Kasir: <b>${cashier}</b></p>
+                <p>Pelanggan: <b>${customerName}</b> (${bill.isMember ? 'Member' : 'Bukan Member'})</p>
+                <p>Metode: <b>${method}</b></p>
+                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+            `;
+
+            cart.forEach(item => {
+                receiptHTML += `
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+                        <span>${item.name} (${item.qty}x)</span>
+                        <span>${formatRupiah(item.subtotal)}</span>
+                    </div>
+                `;
+            });
+
+            receiptHTML += `
+                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+                <div style="display:flex; justify-content:space-between;"><span style="color:#555;">Subtotal:</span><span>${formatRupiah(bill.subtotal)}</span></div>
+                ${bill.discount > 0 ? `<div style="display:flex; justify-content:space-between; color: #e53935;"><span style="color:#555;">Diskon Member (10%):</span><span>-${formatRupiah(bill.discount)}</span></div>` : ''}
+                <div style="display:flex; justify-content:space-between;"><span style="color:#555;">Service Charge (5%):</span><span>${formatRupiah(bill.serviceCharge)}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:#555;">PB1 / Pajak Resto (10%):</span><span>${formatRupiah(bill.tax)}</span></div>
+                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+                
+                <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px;"><span>GRAND TOTAL:</span><span>${formatRupiah(bill.grandTotal)}</span></div>
+                <div style="display:flex; justify-content:space-between; margin-top:5px;"><span>Bayar:</span><span>${formatRupiah(payment)}</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>Kembalian:</span><span>${formatRupiah(change)}</span></div>
+                <br>
+                <p style="text-align:center; font-weight: bold;">Terimakasih</p>
+                <p style="text-align:center; font-weight:;">Password: WARTEL TIGA KALI</p>
+                <p style="text-align:center; font-weight:;">Kritik & saran  : 087831426194</p>
+            `;
+
+            // Rekam transaksi (menggunakan akumulasi Grand Total sebagai omzet asli)
+            laporanKasir.omzetTotal += bill.grandTotal;
+            if (method === 'Tunai') {
+                laporanKasir.omzetTunai += bill.grandTotal;
+            } else {
+                laporanKasir.omzetNontunai += bill.grandTotal;
+            }
+
+            document.getElementById('repTotal').textContent = formatRupiah(laporanKasir.omzetTotal);
+            document.getElementById('repTunai').textContent = formatRupiah(laporanKasir.omzetTunai);
+            document.getElementById('repNonTunai').textContent = formatRupiah(laporanKasir.omzetNontunai);
+
+            document.getElementById('receiptContent').innerHTML = receiptHTML;
+            document.getElementById('receipt').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function clearAll() {
+            cart = [];
+            document.getElementById('customerName').value = ''; // Reset input nama pelanggan menjadi kosong kembali
+            document.getElementById('paymentAmount').value = '';
+            document.getElementById('changeAmount').value = '';
+            document.getElementById('paymentMethod').selectedIndex = 0;
+            document.getElementById('customerStatus').selectedIndex = 0;
+            document.getElementById('cashierName').selectedIndex = 0; 
+            document.getElementById('qrisArea').style.display = 'none'; // Menutup QRIS saat reset
+            updateCartDisplay();
+        }
+
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (document.activeElement.id === 'itemName' || 
+                    document.activeElement.id === 'itemPrice' || 
+                    document.activeElement.id === 'itemQty') {
+                    addItem();
+                }
+            }
+        });
+
+        function updateLiveChange() {
+            const bill = calculateBill();
+            const paymentInput = document.getElementById('paymentAmount');
+            const payment = parseInt(paymentInput.value) || 0;
+            
+            if (cart.length === 0) {
+                document.getElementById('changeAmount').value = '';
+                return;
+            }
+            
+            const change = payment - bill.grandTotal;
+            document.getElementById('changeAmount').value = change >= 0 ? formatRupiah(change) : 'Uang kurang';
+        }
+
+        document.getElementById('paymentAmount').addEventListener('input', updateLiveChange);
+
+        // LOGIK EVALUASI STATUS MEMBER UNTUK UPDATE BILL SECARA LIVE
+        document.getElementById('customerStatus').addEventListener('change', updateCartDisplay);
+
+        // LOGIK EVALUASI METODE PEMBAYARAN UNTUK MEMUNCULKAN BARCODE SECARA OTOMATIS
+        document.getElementById('paymentMethod').addEventListener('change', function() {
+            const bill = calculateBill();
+            const qrisArea = document.getElementById('qrisArea');
+
+            if (this.value === 'Nontunai') {
+                qrisArea.style.display = 'block'; // Tampilkan blok gambar QR Code
+                if (cart.length > 0) {
+                    document.getElementById('paymentAmount').value = bill.grandTotal;
+                }
+            } else {
+                qrisArea.style.display = 'none'; // Sembunyikan blok gambar jika kembali ke Tunai
+                document.getElementById('paymentAmount').value = '';
+            }
+            updateLiveChange();
+        });
+
+        updateCartDisplay();
+
+        function printReceipt() {
+            const printContent = document.getElementById('receiptContent').innerHTML;
+            const win = window.open('', '', 'width=400,height=600');
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Struk Resmi</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace; padding: 20px; font-size: 13px; color: #000; line-height: 1.4; }
+                        h3 { text-align: center; margin-bottom: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <h3>WARUNG TELU</h3>
+                    ${printContent}
+                </body>
+                </html>
+            `);
+            win.document.close();
+            win.print();
+        }
+
+        function closeReceipt() {
+            document.getElementById('receipt').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+            clearAll();
+        }
+    </script>
+</body>
+</html>
